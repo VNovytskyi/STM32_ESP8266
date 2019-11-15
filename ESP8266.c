@@ -1,12 +1,20 @@
 #include "ESP8266.h"
 
+char bool_answer[ESP_BOOL_ANSWER_SIZE];
+char ESP_RX_buff[ESP_RX_buff_size];
+char ESP_TX_buff[ESP_TX_buff_size];
+
+extern I2C_HandleTypeDef hi2c1;
+extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
+
 //Send command "AT" and return answer as true/false
-bool ESP_Test()
+bool ESP_Test(void)
 {
 	char *str = "AT\r\n";
 	HAL_UART_Transmit(&huart2,(uint8_t*)str, strlen(str), 100);
 	
-	HAL_UART_Receive(&huart2, (uint8_t *)bool_answer, BOOL_ANSWER_SIZE, 100);
+	HAL_UART_Receive(&huart2, (uint8_t *)bool_answer, ESP_BOOL_ANSWER_SIZE, 100);
 	
 	return strstr(bool_answer, "OK") == NULL? false: true;
 }
@@ -22,7 +30,7 @@ bool ESP_Set_Echo(bool enableEcho)
 	else
 		HAL_UART_Transmit(&huart2,(uint8_t*)str1, strlen(str1), 100);
 	
-	HAL_UART_Receive(&huart2, (uint8_t *)bool_answer, BOOL_ANSWER_SIZE, 100);
+	HAL_UART_Receive(&huart2, (uint8_t *)bool_answer, ESP_BOOL_ANSWER_SIZE, 100);
 	
 	return strstr(bool_answer, "OK") == NULL? false: true;
 }
@@ -30,16 +38,16 @@ bool ESP_Set_Echo(bool enableEcho)
 //Send command to ESP via USART2: TX(PD_5), RX(PD_6), 115200
 char *ESP_SendCommand(char *command)
 {
-	sprintf(TX_buff, "%s\r\n", command);
+	sprintf(ESP_TX_buff, "%s\r\n", command);
 	
-	HAL_UART_Transmit(&huart2,(uint8_t*)TX_buff, strlen(TX_buff), 100);
+	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
 	
-	memset(RX_buff, 0, RX_buff_size);
+	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 	
-	while(strlen(RX_buff) == 0)
+	while(strlen(ESP_RX_buff) == 0)
 	{
-		HAL_UART_Receive(&huart2, (uint8_t *)RX_buff, RX_buff_size, 100);
+		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
 	}
 	
-	return RX_buff;
+	return ESP_RX_buff;
 }

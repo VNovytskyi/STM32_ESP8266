@@ -13,11 +13,16 @@
 //Send command "AT" and return answer as true/false
 bool ESP_Test(void);
 
-//Enable/Disable echo command
+//Enable/Disable echo of command
 bool ESP_Set_Echo(bool enableEcho);
 
-//Send command to ESP via USART2: TX(PD_5), RX(PD_6), 115200
+//Send command to ESP 
 char *ESP_SendCommand(char *command);
 
-//Test
+//Connect to Wi-fi point and return result true/false
+bool connectTo(char *wifiName, char *password);
+
+// Send data to server
+bool sendRequest(char *type, char *ip, uint8_t port, char *request);
+
 #endif /* ESP8266_H_ */

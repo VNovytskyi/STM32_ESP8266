@@ -51,3 +51,52 @@ char *ESP_SendCommand(char *command)
 	
 	return ESP_RX_buff;
 }
+
+//Connect to Wi-fi point and return result true/false
+bool connectTo(char *wifiName, char *password)
+{
+	sprintf(ESP_TX_buff, "AT+CWJAP=\"%s\",\"%s\"\r\n", wifiName, password);
+	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
+	
+	memset(bool_answer, 0, ESP_BOOL_ANSWER_SIZE);
+	
+	HAL_UART_Receive(&huart2, (uint8_t *)bool_answer, ESP_BOOL_ANSWER_SIZE, 100);
+	
+	return strstr(bool_answer, "OK") == NULL? false: true;
+}
+
+// Send data to server
+bool sendRequest(char *type, char *ip, uint8_t port, char *request)
+{
+	//AT+CIPSTART
+	sprintf(ESP_TX_buff, "AT+CIPSTART=\"%s\",\"%s\",%d\r\n", type, ip, port);
+	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
+	
+	memset(bool_answer, 0, ESP_BOOL_ANSWER_SIZE);
+	HAL_UART_Receive(&huart2, (uint8_t *)bool_answer, ESP_BOOL_ANSWER_SIZE, 100);
+	
+	if(strstr(bool_answer, "OK") == NULL)
+		return false;
+	
+	//AT+CIPSEND
+	sprintf(ESP_TX_buff, "AT+CIPSEND=%d\r\n", strlen(request));
+	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
+	
+	memset(bool_answer, 0, ESP_BOOL_ANSWER_SIZE);
+	HAL_UART_Receive(&huart2, (uint8_t *)bool_answer, ESP_BOOL_ANSWER_SIZE, 100);
+	
+	if(strstr(bool_answer, ">") == NULL)
+		return false;
+	
+	//Request data
+	sprintf(ESP_TX_buff, "%s\r\n", request);
+	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff) + 2, 100);
+	
+	memset(bool_answer, 0, ESP_BOOL_ANSWER_SIZE);
+	HAL_UART_Receive(&huart2, (uint8_t *)bool_answer, ESP_BOOL_ANSWER_SIZE, 100);
+	
+	if(strstr(bool_answer, "OK") == NULL)
+		return false;
+	
+	return true;
+}

@@ -35,34 +35,36 @@ bool ESP_Set_Echo(bool enableEcho)
 	return strstr(bool_answer, "OK") == NULL? false: true;
 }
 
-//Send command to ESP via USART2: TX(PD_5), RX(PD_6), 115200
-char *ESP_SendCommand(char *command)
+//Connect to Wi-fi point and return result true/false
+bool connectTo(char *wifiName, char *password)
 {
-	sprintf(ESP_TX_buff, "%s\r\n", command);
-	
+	sprintf(ESP_TX_buff, "AT+CWJAP_CUR=\"%s\",\"%s\"\r\n", wifiName, password);
 	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
 	
 	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 	
-	while(strlen(ESP_RX_buff) == 0)
+	do
 	{
-		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
-	}
+		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 10);
+	}while(strstr(ESP_RX_buff, "OK") == NULL);
 	
-	return ESP_RX_buff;
+	return strstr(ESP_RX_buff, "OK") == NULL? false: true;
 }
 
-//Connect to Wi-fi point and return result true/false
-bool connectTo(char *wifiName, char *password)
+//Disconnect from Wi-fi
+bool disconnectWifi()
 {
-	sprintf(ESP_TX_buff, "AT+CWJAP=\"%s\",\"%s\"\r\n", wifiName, password);
-	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
+	char *str = "AT+CWQAP\r\n";
+	HAL_UART_Transmit(&huart2,(uint8_t*)str, strlen(str), 100);
 	
-	memset(bool_answer, 0, ESP_BOOL_ANSWER_SIZE);
+	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 	
-	HAL_UART_Receive(&huart2, (uint8_t *)bool_answer, ESP_BOOL_ANSWER_SIZE, 100);
+	do
+	{
+		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 10);
+	}while(strstr(ESP_RX_buff, "OK") == NULL);
 	
-	return strstr(bool_answer, "OK") == NULL? false: true;
+	return strstr(ESP_RX_buff, "OK") == NULL? false: true;
 }
 
 // Send data to server
@@ -100,3 +102,5 @@ bool sendRequest(char *type, char *ip, uint8_t port, char *request)
 	
 	return true;
 }
+
+

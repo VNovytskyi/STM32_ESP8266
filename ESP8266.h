@@ -16,11 +16,11 @@ bool ESP_Test(void);
 //Enable/Disable echo of command
 bool ESP_Set_Echo(bool enableEcho);
 
-//Send command to ESP 
-char *ESP_SendCommand(char *command);
-
 //Connect to Wi-fi point and return result true/false
 bool connectTo(char *wifiName, char *password);
+
+//Disconnect from Wi-fi
+bool disconnectWifi();
 
 // Send data to server
 bool sendRequest(char *type, char *ip, uint8_t port, char *request);

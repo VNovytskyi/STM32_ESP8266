@@ -4,8 +4,6 @@ char bool_answer[ESP_BOOL_ANSWER_SIZE];
 char ESP_RX_buff[ESP_RX_buff_size];
 char ESP_TX_buff[ESP_TX_buff_size];
 
-extern I2C_HandleTypeDef hi2c1;
-extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 
 //Send command "AT" and return answer as true/false
@@ -45,8 +43,8 @@ bool connectTo(char *wifiName, char *password)
 	
 	do
 	{
-		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 10);
-	}while(strstr(ESP_RX_buff, "OK") == NULL);
+		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
+	}while(strstr(ESP_RX_buff, "OK") == NULL && strstr(ESP_RX_buff, "ERROR") == NULL);
 	
 	return strstr(ESP_RX_buff, "OK") == NULL? false: true;
 }
@@ -61,8 +59,9 @@ bool disconnectWifi()
 	
 	do
 	{
-		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 10);
-	}while(strstr(ESP_RX_buff, "OK") == NULL);
+		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
+		
+	}while(strstr(ESP_RX_buff, "OK") == NULL && strstr(ESP_RX_buff, "ERROR") == NULL);
 	
 	return strstr(ESP_RX_buff, "OK") == NULL? false: true;
 }
@@ -70,35 +69,52 @@ bool disconnectWifi()
 // Send data to server
 bool sendRequest(char *type, char *ip, uint8_t port, char *request)
 {
-	//AT+CIPSTART
 	sprintf(ESP_TX_buff, "AT+CIPSTART=\"%s\",\"%s\",%d\r\n", type, ip, port);
 	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
+	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 	
-	memset(bool_answer, 0, ESP_BOOL_ANSWER_SIZE);
-	HAL_UART_Receive(&huart2, (uint8_t *)bool_answer, ESP_BOOL_ANSWER_SIZE, 100);
+	do
+	{
+		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
+		
+	}while(strstr(ESP_RX_buff, "OK") == NULL && strstr(ESP_RX_buff, "ERROR") == NULL);
 	
-	if(strstr(bool_answer, "OK") == NULL)
+	if(strstr(ESP_RX_buff, "OK") == NULL)
+	{
+		PC_Send(ESP_RX_buff);
 		return false;
+	}
 	
-	//AT+CIPSEND
-	sprintf(ESP_TX_buff, "AT+CIPSEND=%d\r\n", strlen(request));
+	sprintf(ESP_TX_buff, "AT+CIPSEND=%d\r\n", strlen(request) + 2);
+	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
+	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
+	
+	do
+	{
+		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
+		
+	}while(strstr(ESP_RX_buff, "OK") == NULL && strstr(ESP_RX_buff, "ERROR") == NULL);
+	
+	if(strstr(ESP_RX_buff, ">") == NULL)
+	{
+		PC_Send(ESP_RX_buff);
+		return false;
+	}
+	
+	sprintf(ESP_TX_buff, "%s\r\n", request);
 	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
 	
-	memset(bool_answer, 0, ESP_BOOL_ANSWER_SIZE);
-	HAL_UART_Receive(&huart2, (uint8_t *)bool_answer, ESP_BOOL_ANSWER_SIZE, 100);
-	
-	if(strstr(bool_answer, ">") == NULL)
+	do
+	{
+		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
+		
+	}while(strstr(ESP_RX_buff, "OK") == NULL && strstr(ESP_RX_buff, "ERROR") == NULL);
+
+	if(strstr(ESP_RX_buff, "OK") == NULL)
+	{
+		PC_Send(ESP_RX_buff);
 		return false;
-	
-	//Request data
-	sprintf(ESP_TX_buff, "%s\r\n", request);
-	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff) + 2, 100);
-	
-	memset(bool_answer, 0, ESP_BOOL_ANSWER_SIZE);
-	HAL_UART_Receive(&huart2, (uint8_t *)bool_answer, ESP_BOOL_ANSWER_SIZE, 100);
-	
-	if(strstr(bool_answer, "OK") == NULL)
-		return false;
+	}
 	
 	return true;
 }

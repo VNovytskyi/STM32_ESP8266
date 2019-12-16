@@ -33,7 +33,7 @@ int ESP8266_DisableEcho()
     return strstr(bool_answer, "OK") == NULL? ESP8266_DISABLE_ECHO_ERROR: ESP8266_DISABLE_ECHO_OK;
 }
 
-int ESP8266_connectTo(char *wifiName, char *password)
+int ESP8266_ConnectTo(char *wifiName, char *password)
 {
 	sprintf(ESP_TX_buff, "AT+CWJAP_CUR=\"%s\",\"%s\"\r\n", wifiName, password);
 	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);

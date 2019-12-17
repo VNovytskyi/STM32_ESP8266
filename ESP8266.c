@@ -95,50 +95,43 @@ void ESP8266_DisconnectFromWifi()
 void ESP8266_SendRequest(char *type, char *ip, uint8_t port, char *request)
 {
 	sprintf(ESP_TX_buff, "AT+CIPSTART=\"%s\",\"%s\",%d\r\n", type, ip, port);
-    PC_Send(ESP_TX_buff);
 	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
-	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 	
+	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 	do
 	{
 		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
-		
-	}while(strstr(ESP_RX_buff, "OK") == NULL && strstr(ESP_RX_buff, "ERROR") == NULL);
-	
-    if(strstr(ESP_RX_buff, "OK") == NULL)
-    {
-        ESP8266_Error("[ ERROR ] ESP8266_AT_CIPSTART_ERROR");
-    }
+        
+        if(strstr(ESP_RX_buff, "ERROR") != NULL)
+            ESP8266_Error("[ ERROR ] ESP8266_AT_CIPSTART_ERROR");
+ 
+	} while(strstr(ESP_RX_buff, "OK") == NULL);
 	
 	sprintf(ESP_TX_buff, "AT+CIPSEND=%d\r\n", strlen(request) + 2);
 	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
-	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 	
+    memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 	do
 	{
 		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
-		
-	}while(strstr(ESP_RX_buff, "OK") == NULL && strstr(ESP_RX_buff, "ERROR") == NULL);
-	
-    
-    if(strstr(ESP_RX_buff, "OK") == NULL)
-    {
-        ESP8266_Error("[ ERROR ] ESP8266_AT_CIPSEND_ERROR");
-        return;
-    }
-	
+        
+        if(strstr(ESP_RX_buff, "ERROR") != NULL)
+            ESP8266_Error("[ ERROR ] ESP8266_AT_CIPSEND_ERROR");
+
+	}while(strstr(ESP_RX_buff, "OK") == NULL);
+
 	sprintf(ESP_TX_buff, "%s\r\n", request);
 	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
-	
+    
+    memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 	do
 	{
 		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
-		
-	}while(strstr(ESP_RX_buff, "OK") == NULL && strstr(ESP_RX_buff, "ERROR") == NULL);
-
-    if(strstr(ESP_RX_buff, "OK") == NULL)
-    {
-        ESP8266_Error("[ ERROR ] ESP8266_SEND_REQUEST_ERROR");
-        return;
-    }
+        
+        if(strstr(ESP_RX_buff, "ERROR") != NULL)
+            ESP8266_Error("[ ERROR ] ESP8266_SEND_REQUEST_ERROR");
+        
+	} while(strstr(ESP_RX_buff, "OK") == NULL);
+    
+    PC_Send(ESP_RX_buff);
 }

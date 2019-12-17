@@ -6,7 +6,6 @@
 #include "stdbool.h"
 #include "string.h"
 
-#define ESP_BOOL_ANSWER_SIZE 8
 #define ESP_RX_buff_size 64
 #define ESP_TX_buff_size 64
 

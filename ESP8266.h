@@ -29,6 +29,15 @@
 #define ESP8266_SEND_REQUEST_ERROR 12
 #define ESP8266_SEND_REQUEST_OK 12
 
+#define ESP8266_DEBUG
+#define ESP8266_SHOW_ANSWER_ON_REQUEST
+
+void ESP8266_AT_SendData(char *request);
+
+void ESP8266_AT_CIPSEND(char *request);
+
+void ESP8266_AT_CIPSTART(char *type, char *ip, uint8_t port);
+
 void ESP8266_Error(char *errorMessage);
 
 void ESP8266_Test(void);

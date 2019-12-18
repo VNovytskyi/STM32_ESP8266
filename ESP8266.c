@@ -33,7 +33,7 @@ void ESP8266_Test(void)
     }
     
     #ifdef ESP8266_DEBUG
-        PC_Send("[ OK ] ESP8266_TEST_ERROR\n");
+        PC_Send("[ OK ] ESP8266_TEST\n");
     #endif
 }
 

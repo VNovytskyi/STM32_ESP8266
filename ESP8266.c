@@ -3,9 +3,47 @@
 bool ESP8266_Debug = false;
 char ESP_RX_buff[ESP_RX_buff_size];
 char ESP_TX_buff[ESP_TX_buff_size];
-char temp[2048];
+
+char ESP_temp_buff[ESP_temp_buff_size];
 
 extern UART_HandleTypeDef huart2;
+
+char *ESP8266_GetAcceessPointsList()
+{
+    char *str = "AT+CWLAP\r\n";
+    
+	HAL_UART_Transmit(&huart2,(uint8_t*)str, strlen(str), 100);
+	
+	memset(ESP_temp_buff, 0, ESP_temp_buff_size);
+	do
+	{
+		HAL_UART_Receive(&huart2, (uint8_t *)ESP_temp_buff, ESP_temp_buff_size, 100);
+        
+        if(strstr(ESP_temp_buff, "ERROR") != NULL)
+            ESP8266_Error("[ ERROR ] ESP8266_GET_ACCESS_POINTS");
+        
+	} while(strstr(ESP_temp_buff, "OK") == NULL);
+    
+    return ESP_temp_buff;
+}
+
+void ESP8266_Restart()
+{
+    char *str = "AT+RST\r\n";
+    
+	HAL_UART_Transmit(&huart2,(uint8_t*)str, strlen(str), 100);
+	
+	HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
+    
+    if(strstr(ESP_RX_buff, "OK") == NULL)
+    {
+        ESP8266_Error("[ ERROR ] ESP8266_RESTART");
+    }
+     PC_Send(ESP_RX_buff);
+    #ifdef ESP8266_DEBUG
+        PC_Send("[ OK ] ESP8266_RESTART\n");
+    #endif
+}
 
 void ESP8266_Error(char *errorMessage)
 {
@@ -90,11 +128,15 @@ void ESP8266_ConnectTo(char *wifiName, char *password)
     
     if(strstr(ESP_RX_buff, "OK") == NULL)
     {
-       ESP8266_Error("[ ERROR ] Connect to MERCUSYS_7EBA\n");
+       sprintf(ESP_TX_buff, "[ ERROR ] Connect to %s\n", wifiName);
+       ESP8266_Error(ESP_TX_buff);
     }
     
+    
+    
     #ifdef ESP8266_DEBUG
-        PC_Send("[ OK ] Connect to MERCUSYS_7EBA\n");
+        sprintf(ESP_TX_buff, "[ OK ] Connect to %s\n", wifiName);
+        PC_Send(ESP_TX_buff);
     #endif
 }
 
@@ -177,21 +219,21 @@ void ESP8266_AT_SendData(char *request)
     sprintf(ESP_TX_buff, "%s\r\n", request);
 	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
     
-    memset(temp, 0, 2048);
+    memset(ESP_temp_buff, 0, ESP_temp_buff_size);
 	do
 	{
-		HAL_UART_Receive(&huart2, (uint8_t *)temp, 2048, 200);
+		HAL_UART_Receive(&huart2, (uint8_t *)ESP_temp_buff, ESP_temp_buff_size, 200);
         
-        if(strstr(temp, "ERROR") != NULL)
+        if(strstr(ESP_temp_buff, "ERROR") != NULL)
             ESP8266_Error("[ ERROR ] ESP8266_SEND_REQUEST_ERROR");
         
-	} while(strstr(temp, "OK") == NULL);
+	} while(strstr(ESP_temp_buff, "OK") == NULL);
     
     #ifdef ESP8266_DEBUG
         PC_Send("[ OK ] ESP8266_SEND_REQUEST\n");
     #endif
     
     #ifdef ESP8266_SHOW_ANSWER_ON_REQUEST
-        PC_Send(temp);
+        PC_Send(ESP_temp_buff);
     #endif
 }

@@ -39,7 +39,7 @@ void ESP8266_Restart()
     {
         ESP8266_Error("[ ERROR ] ESP8266_RESTART");
     }
-     PC_Send(ESP_RX_buff);
+    
     #ifdef ESP8266_DEBUG
         PC_Send("[ OK ] ESP8266_RESTART\n");
     #endif
@@ -118,21 +118,18 @@ void ESP8266_ConnectTo(char *wifiName, char *password)
 	sprintf(ESP_TX_buff, "AT+CWJAP_CUR=\"%s\",\"%s\"\r\n", wifiName, password);
 	HAL_UART_Transmit(&huart2,(uint8_t*)ESP_TX_buff, strlen(ESP_TX_buff), 100);
 	
-	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
-	
+    memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 	do
 	{
 		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
         
-	}while(strstr(ESP_RX_buff, "OK") == NULL && strstr(ESP_RX_buff, "ERROR") == NULL);
-    
-    if(strstr(ESP_RX_buff, "OK") == NULL)
-    {
-       sprintf(ESP_TX_buff, "[ ERROR ] Connect to %s\n", wifiName);
-       ESP8266_Error(ESP_TX_buff);
-    }
-    
-    
+        if(strstr(ESP_RX_buff, "ERROR") != NULL)
+        {
+           sprintf(ESP_TX_buff, "[ ERROR ] Connect to %s\n", wifiName);
+           ESP8266_Error(ESP_RX_buff);
+        }
+        
+	} while(strstr(ESP_RX_buff, "WIFI GOT IP") == NULL);
     
     #ifdef ESP8266_DEBUG
         sprintf(ESP_TX_buff, "[ OK ] Connect to %s\n", wifiName);
@@ -205,7 +202,11 @@ void ESP8266_AT_CIPSEND(char *request)
 		HAL_UART_Receive(&huart2, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
         
         if(strstr(ESP_RX_buff, "ERROR") != NULL)
+        {
+            PC_Send(ESP_RX_buff);
             ESP8266_Error("[ ERROR ] ESP8266_AT_CIPSEND_ERROR");
+        }
+            
 
 	}while(strstr(ESP_RX_buff, "OK") == NULL);
     

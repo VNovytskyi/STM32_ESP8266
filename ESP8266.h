@@ -19,6 +19,12 @@ char *ESP8266_GetAcceessPointsList();
 //Команда проходит, есть ответ, но модуль зависает
 void ESP8266_Restart();
 
+void ESP8266_Init(UART_HandleTypeDef *huart, GPIO_TypeDef *pinPort, uint32_t pinNum);
+
+void ESP8266_ON();
+
+void ESP8266_OFF();
+
 void ESP8266_Error(char *errorMessage);
 
 void ESP8266_Test(void);

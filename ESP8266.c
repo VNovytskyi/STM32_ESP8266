@@ -87,8 +87,7 @@ void ESP8266_ConnectTo(char *wifiName, char *password)
 
 void ESP8266_DisconnectFromWifi()
 {
-	char *str = "AT+CWQAP\r\n";
-	ESP8266_SendCommand(ESP_TX_buff, "OK");
+	ESP8266_SendCommand("AT+CWQAP\r\n", "OK");
 }
 
 void ESP8266_SendRequest(char *type, char *ip, uint8_t port, char *request)
@@ -122,14 +121,40 @@ bool ESP8266_SendCommand(char *command, char *correctAnswer)
 
 	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 
-	do
+	for(uint8_t i = 0; i < 64; ++i)
 	{
-		HAL_UART_Receive(ESP8266_huart, (uint8_t *)ESP_temp_buff, ESP_temp_buff_size, 200);
+		HAL_UART_Receive(ESP8266_huart, (uint8_t *)ESP_temp_buff, ESP_temp_buff_size, 100);
+
+		if(strstr(ESP_temp_buff, correctAnswer) != NULL)
+			return true;
+	}
+
+	return false;
+}
+
+/*
+ for(uint8_t i = 0; i < 64; ++i)
+	{
+		HAL_UART_Receive(ESP8266_huart, (uint8_t *)ESP_temp_buff, ESP_temp_buff_size, 100);
+
+		if(strstr(ESP_temp_buff, correctAnswer) != NULL)
+			return true;
+	}
+*/
+
+/*
+
+do
+	{
+		++counter;
+
+		HAL_UART_Receive(ESP8266_huart, (uint8_t *)ESP_temp_buff, ESP_temp_buff_size, 100);
 
 	    if(strstr(ESP_temp_buff, "ERROR") != NULL)
 	    	return false;
 
 	} while(strstr(ESP_temp_buff, correctAnswer) == NULL);
 
-	return true;
-}
+	sprintf(buff, "%d", counter);
+	PC_Send(buff);
+*/

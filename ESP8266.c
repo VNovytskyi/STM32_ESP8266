@@ -43,7 +43,7 @@ void ESP8266_ErrorHandler(char *errorMessage)
 
 bool ESP8266_Test(void)
 {
-	ESP8266_Send("AT\r\n") && ESP8266_Recv("OK");
+	return ESP8266_Send("AT\r\n") && ESP8266_Recv("OK");
 }
 
 bool ESP8266_EnableEcho()
@@ -97,7 +97,7 @@ bool ESP8266_Send(char *command)
 
 bool ESP8266_Recv(char *correctAnswer)
 {
-	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
+	ESP8266_ClearRecvBuff();
 
 	for(uint8_t i = 0; i < 64; ++i)
 	{
@@ -116,7 +116,8 @@ char *ESP8266_GetAcceessPointsList()
 
 	HAL_UART_Transmit(ESP8266_huart,(uint8_t*)str, strlen(str), 100);
 
-	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
+	ESP8266_ClearRecvBuff();
+
 	do
 	{
 		HAL_UART_Receive(ESP8266_huart, (uint8_t *)ESP_RX_buff, ESP_RX_buff, 100);
@@ -127,4 +128,9 @@ char *ESP8266_GetAcceessPointsList()
 	} while(strstr(ESP_RX_buff, "OK") == NULL);
 
     return ESP_RX_buff;
+}
+
+void ESP8266_ClearRecvBuff()
+{
+	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 }

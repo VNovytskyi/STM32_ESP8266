@@ -3,10 +3,10 @@
 
 #define ESP_RX_buff_size 64
 #define ESP_TX_buff_size 64
-#define ESP_temp_buff_size 2048
 
 #define ESP8266_DEBUG
-//#define ESP8266_SHOW_ANSWER_ON_REQUEST
+
+void ESP8266_ClearRecvBuff();
 
 bool ESP8266_Send(char *command);
 bool ESP8266_Recv(char *correctAnswer);
@@ -20,7 +20,6 @@ bool ESP8266_Restart();
 void ESP8266_Init(UART_HandleTypeDef *huart, GPIO_TypeDef *pinPort, uint32_t pinNum);
 
 void ESP8266_ON();
-
 void ESP8266_OFF();
 
 void ESP8266_ErrorHandler(char *errorMessage);
@@ -31,7 +30,6 @@ bool ESP8266_EnableEcho();
 bool ESP8266_DisableEcho();
 
 bool ESP8266_ConnectTo(char *wifiName, char *password);
-
 bool ESP8266_DisconnectFromWifi();
 
 bool ESP8266_SendRequest(char *type, char *ip, uint8_t port, char *request);

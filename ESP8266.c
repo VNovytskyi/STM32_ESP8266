@@ -110,7 +110,7 @@ bool ESP8266_Recv(char *correctAnswer)
 	return false;
 }
 
-char *ESP8266_GetAcceessPointsList()
+char *ESP8266_GetAcceessPoints()
 {
     char *str = "AT+CWLAP\r\n";
 
@@ -133,4 +133,15 @@ char *ESP8266_GetAcceessPointsList()
 void ESP8266_ClearRecvBuff()
 {
 	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
+}
+
+bool ESP8266_ConnectToAnyAccessPointFromDefaultList()
+{
+	int accessPointsAmount = sizeof(DefaultAccessPointsList) / sizeof(DefaultAccessPointsList[0]);
+
+	for(int i = 0; i < accessPointsAmount; ++i)
+		if(ESP8266_ConnectTo(DefaultAccessPointsList[i].accessPointName, DefaultAccessPointsList[i].accessPointPass))
+			return true;
+
+	return false;
 }

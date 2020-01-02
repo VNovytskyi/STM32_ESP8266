@@ -56,12 +56,6 @@ bool ESP8266_DisableEcho()
     return ESP8266_Send("ATE0\r\n") && ESP8266_Recv("OK");
 }
 
-bool ESP8266_ConnectTo(char *wifiName, char *password)
-{
-	sprintf(ESP_TX_buff, "AT+CWJAP_CUR=\"%s\",\"%s\"\r\n", wifiName, password);
-	return ESP8266_Send(ESP_TX_buff) && ESP8266_Recv("WIFI GOT IP");
-}
-
 bool ESP8266_DisconnectFromWifi()
 {
 	return ESP8266_Send("AT+CWQAP\r\n") && ESP8266_Recv("OK");
@@ -135,11 +129,17 @@ void ESP8266_ClearRecvBuff()
 	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 }
 
+bool ESP8266_ConnectTo(char *wifiName, char *password)
+{
+	sprintf(ESP_TX_buff, "AT+CWJAP_CUR=\"%s\",\"%s\"\r\n", wifiName, password);
+	return ESP8266_Send(ESP_TX_buff) && ESP8266_Recv("OK");
+}
+
 bool ESP8266_ConnectToAnyAccessPointFromDefaultList()
 {
 	int accessPointsAmount = sizeof(DefaultAccessPointsList) / sizeof(DefaultAccessPointsList[0]);
 
-	for(int i = 0; i < accessPointsAmount; ++i)
+	for(int i = 0; i < accessPointsAmount; i++)
 		if(ESP8266_ConnectTo(DefaultAccessPointsList[i].accessPointName, DefaultAccessPointsList[i].accessPointPass))
 			return true;
 

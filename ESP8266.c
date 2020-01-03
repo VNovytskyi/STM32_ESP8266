@@ -33,18 +33,6 @@ bool ESP8266_Restart()
     return ESP8266_Send("AT+RST\r\n") && ESP8266_Recv("OK");
 }
 
-void ESP8266_ErrorHandler(char *errorMessage)
-{
-    PC_Send(errorMessage);
-    PC_Send("\n");
-    
-    while (1)
-    {
-        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-        HAL_Delay(100);
-    }
-}
-
 bool ESP8266_Test(void)
 {
 	return ESP8266_Send("AT\r\n") && ESP8266_Recv("OK");
@@ -90,7 +78,22 @@ bool ESP8266_AT_SendData(char *request)
 
 bool ESP8266_Send(char *command)
 {
-	return HAL_UART_Transmit(ESP8266_huart,(uint8_t*)command, strlen(command), 100) == HAL_OK? true: false;
+	/*
+	uint32_t time = HAL_GetTick();
+	uint32_t maxDelayTime = 1000;
+
+	while(HAL_GetTick() - time < maxDelayTime)
+	{
+		HAL_StatusTypeDef status = HAL_UART_Transmit(ESP8266_huart,(uint8_t*)command, strlen(command), 100);
+
+		if(status == HAL_OK)
+			return true;
+	}
+
+	return false;
+	*/
+
+	return  HAL_UART_Transmit(ESP8266_huart,(uint8_t*)command, strlen(command), 100) == HAL_OK? true: false;
 }
 
 /*
@@ -107,8 +110,13 @@ bool ESP8266_Recv(char *correctAnswer)
 	while(HAL_GetTick() - time < maxDelayTime)
 	{
 		if(strstr(ESP_RX_buff, correctAnswer) != NULL)
-					return true;
+		{
+			HAL_UART_AbortReceive(ESP8266_huart);
+			return true;
+		}
+
 	}
+
 
 	return false;
 }
@@ -136,13 +144,6 @@ bool ESP8266_ConnectTo(char *wifiName, char *password)
 {
 	sprintf(ESP_TX_buff, "AT+CWJAP_CUR=\"%s\",\"%s\"\r\n", wifiName, password);
 	return ESP8266_Send(ESP_TX_buff) && ESP8266_Recv("OK");
-
-	/*
-	ESP8266_Send(ESP_TX_buff);
-	ESP8266_Recv("OK");
-	PC_Send(ESP_RX_buff_index);
-	return true;
-	*/
 }
 
 bool ESP8266_ConnectToAnyAccessPointFromDefaultList()
@@ -156,6 +157,9 @@ bool ESP8266_ConnectToAnyAccessPointFromDefaultList()
 	return false;
 }
 
+/*
+ * Other functions
+ */
 
 char *ESP8266_GetAcceessPoints()
 {

@@ -4,6 +4,8 @@
 #define ESP_RX_buff_size 128
 #define ESP_TX_buff_size 64
 
+#define ESP_DEBUG
+
 bool ESP8266_ConnectToAnyAccessPointFromDefaultList();
 
 void ESP8266_ClearRecvBuff();
@@ -21,8 +23,6 @@ void ESP8266_Init(UART_HandleTypeDef *huart, GPIO_TypeDef *pinPort, uint32_t pin
 
 void ESP8266_ON();
 void ESP8266_OFF();
-
-void ESP8266_ErrorHandler(char *errorMessage);
 
 bool ESP8266_Test(void);
 

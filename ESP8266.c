@@ -3,6 +3,10 @@
 char ESP_RX_buff[ESP_RX_buff_size];
 char ESP_TX_buff[ESP_TX_buff_size];
 
+volatile uint8_t recvByte;
+
+int ESP_RX_buff_index = 0;
+
 UART_HandleTypeDef *ESP8266_huart;
 GPIO_TypeDef *ESP8266_PinPort;
 uint32_t ESP8266_PinNum;
@@ -89,20 +93,69 @@ bool ESP8266_Send(char *command)
 	return HAL_UART_Transmit(ESP8266_huart,(uint8_t*)command, strlen(command), 100) == HAL_OK? true: false;
 }
 
+/*
+ * Receiving methods
+ */
+
 bool ESP8266_Recv(char *correctAnswer)
 {
 	ESP8266_ClearRecvBuff();
 
-	for(uint8_t i = 0; i < 64; ++i)
-	{
-		HAL_UART_Receive(ESP8266_huart, (uint8_t *)ESP_RX_buff, ESP_RX_buff_size, 100);
+	uint32_t time = HAL_GetTick();
+	uint32_t maxDelayTime = 10000;
 
+	while(HAL_GetTick() - time < maxDelayTime)
+	{
 		if(strstr(ESP_RX_buff, correctAnswer) != NULL)
-			return true;
+					return true;
 	}
 
 	return false;
 }
+
+void ESP8266_ClearRecvBuff()
+{
+	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
+	ESP_RX_buff_index = 0;
+	HAL_UART_Receive_IT(ESP8266_huart, &recvByte, (uint16_t)1);
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart == ESP8266_huart)
+	{
+		ESP_RX_buff[ESP_RX_buff_index++] = recvByte;
+		HAL_UART_Receive_IT(ESP8266_huart, &recvByte, (uint16_t)1);
+	}
+}
+
+/*
+ *  Connection methods
+ */
+bool ESP8266_ConnectTo(char *wifiName, char *password)
+{
+	sprintf(ESP_TX_buff, "AT+CWJAP_CUR=\"%s\",\"%s\"\r\n", wifiName, password);
+	return ESP8266_Send(ESP_TX_buff) && ESP8266_Recv("OK");
+
+	/*
+	ESP8266_Send(ESP_TX_buff);
+	ESP8266_Recv("OK");
+	PC_Send(ESP_RX_buff_index);
+	return true;
+	*/
+}
+
+bool ESP8266_ConnectToAnyAccessPointFromDefaultList()
+{
+	int accessPointsAmount = sizeof(DefaultAccessPointsList) / sizeof(DefaultAccessPointsList[0]);
+
+	for(int i = 0; i < accessPointsAmount; i++)
+		if(ESP8266_ConnectTo(DefaultAccessPointsList[i].accessPointName, DefaultAccessPointsList[i].accessPointPass))
+			return true;
+
+	return false;
+}
+
 
 char *ESP8266_GetAcceessPoints()
 {
@@ -122,26 +175,4 @@ char *ESP8266_GetAcceessPoints()
 	} while(strstr(ESP_RX_buff, "OK") == NULL);
 
     return ESP_RX_buff;
-}
-
-void ESP8266_ClearRecvBuff()
-{
-	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
-}
-
-bool ESP8266_ConnectTo(char *wifiName, char *password)
-{
-	sprintf(ESP_TX_buff, "AT+CWJAP_CUR=\"%s\",\"%s\"\r\n", wifiName, password);
-	return ESP8266_Send(ESP_TX_buff) && ESP8266_Recv("OK");
-}
-
-bool ESP8266_ConnectToAnyAccessPointFromDefaultList()
-{
-	int accessPointsAmount = sizeof(DefaultAccessPointsList) / sizeof(DefaultAccessPointsList[0]);
-
-	for(int i = 0; i < accessPointsAmount; i++)
-		if(ESP8266_ConnectTo(DefaultAccessPointsList[i].accessPointName, DefaultAccessPointsList[i].accessPointPass))
-			return true;
-
-	return false;
 }

@@ -1,7 +1,7 @@
 #ifndef ESP8266_H_
 #define ESP8266_H_
 
-#define ESP_RX_buff_size 64
+#define ESP_RX_buff_size 128
 #define ESP_TX_buff_size 64
 
 bool ESP8266_ConnectToAnyAccessPointFromDefaultList();

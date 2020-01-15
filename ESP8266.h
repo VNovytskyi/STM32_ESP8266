@@ -1,7 +1,9 @@
 #ifndef ESP8266_H_
 #define ESP8266_H_
 
-#define ESP_RX_buff_size 128
+#include "stdbool.h"
+
+#define ESP_RX_buff_size 2048
 #define ESP_TX_buff_size 64
 
 #define ESP_DEBUG
@@ -13,7 +15,6 @@ void ESP8266_ClearRecvBuff();
 bool ESP8266_Send(char *command);
 bool ESP8266_Recv(char *correctAnswer);
 
-//Некорректно работает
 char *ESP8266_GetAcceessPoints();
 
 //Команда проходит, есть ответ, но модуль зависает
@@ -32,10 +33,10 @@ bool ESP8266_DisableEcho();
 bool ESP8266_ConnectTo(char *wifiName, char *password);
 bool ESP8266_DisconnectFromWifi();
 
-bool ESP8266_SendRequest(char *type, char *ip, uint8_t port, char *request);
-bool ESP8266_AT_SendData(char *request);
-bool ESP8266_AT_CIPSEND(int requestLength);
+char *ESP8266_SendRequest(char *type, char *ip, uint8_t port, char *request);
 bool ESP8266_AT_CIPSTART(char *type, char *ip, uint8_t port);
+bool ESP8266_AT_CIPSEND(int requestLength);
+bool ESP8266_AT_SendData(char *request);
 
 struct AccessPoint
 {
@@ -43,7 +44,7 @@ struct AccessPoint
 	char accessPointPass[64];
 };
 
-struct AccessPoint DefaultAccessPointsList[] = {"Snapy", "31055243167vlad", "MERCUSYS_7EBA", "3105vlad3010vlada"};
+struct AccessPoint DefaultAccessPointsList[] = {{"Snapy", "31055243167vlad"}, {"MERCUSYS_7EBA", "3105vlad3010vlada"}};
 
 #include "ESP8266.c"
 #endif /* ESP8266_H_ */

@@ -4,7 +4,6 @@ char ESP_RX_buff[ESP_RX_buff_size];
 char ESP_TX_buff[ESP_TX_buff_size];
 
 volatile uint8_t recvByte;
-
 int ESP_RX_buff_index = 0;
 
 UART_HandleTypeDef *ESP8266_huart;
@@ -53,9 +52,9 @@ bool ESP8266_DisconnectFromWifi()
 	return ESP8266_Send("AT+CWQAP\r\n") && ESP8266_Recv("OK");
 }
 
-bool ESP8266_SendRequest(char *type, char *ip, uint8_t port, char *request)
+char *ESP8266_SendRequest(char *type, char *ip, uint8_t port, char *request)
 {
-	return ESP8266_AT_CIPSTART(type, ip, port) && ESP8266_AT_CIPSEND(strlen(request) + 2) && ESP8266_AT_SendData(request);
+	return ESP8266_AT_CIPSTART(type, ip, port) && ESP8266_AT_CIPSEND(strlen(request) + 2) && ESP8266_AT_SendData(request)? ESP_RX_buff: NULL;
 }
 
 bool ESP8266_AT_CIPSTART(char *type, char *ip, uint8_t port)
@@ -78,45 +77,34 @@ bool ESP8266_AT_SendData(char *request)
 
 bool ESP8266_Send(char *command)
 {
-	/*
-	uint32_t time = HAL_GetTick();
-	uint32_t maxDelayTime = 1000;
-
-	while(HAL_GetTick() - time < maxDelayTime)
-	{
-		HAL_StatusTypeDef status = HAL_UART_Transmit(ESP8266_huart,(uint8_t*)command, strlen(command), 100);
-
-		if(status == HAL_OK)
-			return true;
-	}
-
-	return false;
-	*/
-
 	return  HAL_UART_Transmit(ESP8266_huart,(uint8_t*)command, strlen(command), 100) == HAL_OK? true: false;
 }
 
-/*
- * Receiving methods
- */
-
 bool ESP8266_Recv(char *correctAnswer)
 {
-	ESP8266_ClearRecvBuff();
-
+    uint8_t prevRecvByte = 0;
+    uint32_t timeout = 10000;
 	uint32_t time = HAL_GetTick();
-	uint32_t maxDelayTime = 10000;
 
-	while(HAL_GetTick() - time < maxDelayTime)
+    ESP8266_ClearRecvBuff();
+    HAL_UART_Receive_IT(ESP8266_huart, (uint8_t*)&recvByte, (uint16_t)1);
+
+	while(HAL_GetTick() - time < timeout)
 	{
+		if(prevRecvByte != recvByte)
+		{
+			time = HAL_GetTick();
+			prevRecvByte = recvByte;
+		}
+
 		if(strstr(ESP_RX_buff, correctAnswer) != NULL)
 		{
 			HAL_UART_AbortReceive(ESP8266_huart);
 			return true;
 		}
 
+		//Код задержки
 	}
-
 
 	return false;
 }
@@ -125,7 +113,6 @@ void ESP8266_ClearRecvBuff()
 {
 	memset(ESP_RX_buff, 0, ESP_RX_buff_size);
 	ESP_RX_buff_index = 0;
-	HAL_UART_Receive_IT(ESP8266_huart, &recvByte, (uint16_t)1);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -133,13 +120,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	if(huart == ESP8266_huart)
 	{
 		ESP_RX_buff[ESP_RX_buff_index++] = recvByte;
-		HAL_UART_Receive_IT(ESP8266_huart, &recvByte, (uint16_t)1);
+		HAL_UART_Receive_IT(ESP8266_huart, (uint8_t*)&recvByte, (uint16_t)1);
 	}
 }
 
-/*
- *  Connection methods
- */
 bool ESP8266_ConnectTo(char *wifiName, char *password)
 {
 	sprintf(ESP_TX_buff, "AT+CWJAP_CUR=\"%s\",\"%s\"\r\n", wifiName, password);
@@ -157,26 +141,7 @@ bool ESP8266_ConnectToAnyAccessPointFromDefaultList()
 	return false;
 }
 
-/*
- * Other functions
- */
-
 char *ESP8266_GetAcceessPoints()
 {
-    char *str = "AT+CWLAP\r\n";
-
-	HAL_UART_Transmit(ESP8266_huart,(uint8_t*)str, strlen(str), 100);
-
-	ESP8266_ClearRecvBuff();
-
-	do
-	{
-		HAL_UART_Receive(ESP8266_huart, (uint8_t *)ESP_RX_buff, ESP_RX_buff, 100);
-
-        if(strstr(ESP_RX_buff, "ERROR") != NULL)
-            ESP8266_Error("[ ERROR ] ESP8266_GET_ACCESS_POINTS");
-
-	} while(strstr(ESP_RX_buff, "OK") == NULL);
-
-    return ESP_RX_buff;
+    return ESP8266_Send("AT+CWLAP\r\n") && ESP8266_Recv("OK")? ESP_RX_buff: NULL;
 }

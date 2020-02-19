@@ -10,7 +10,7 @@ UART_HandleTypeDef *ESP8266_huart;
 GPIO_TypeDef *ESP8266_PinPort;
 uint32_t ESP8266_PinNum;
 
-void ESP8266_Init(UART_HandleTypeDef *huart, GPIO_TypeDef *pinPort, uint32_t pinNum)
+void ESP8266_SetConfig(UART_HandleTypeDef *huart, GPIO_TypeDef *pinPort, uint32_t pinNum)
 {
     ESP8266_PinPort = pinPort;
     ESP8266_PinNum = pinNum;
@@ -77,17 +77,18 @@ bool ESP8266_AT_SendData(char *request)
 
 bool ESP8266_Send(char *command)
 {
-	return  HAL_UART_Transmit(ESP8266_huart,(uint8_t*)command, strlen(command), 100) == HAL_OK? true: false;
+	//return HAL_UART_Transmit_DMA(ESP8266_huart, (uint8_t*)command, strlen(command));
+	return  HAL_UART_Transmit(ESP8266_huart,(uint8_t*)command, strlen(command), 10) == HAL_OK? true: false;
 }
 
 bool ESP8266_Recv(char *correctAnswer)
 {
-    uint8_t prevRecvByte = 0;
-    uint32_t timeout = 10000;
+	uint8_t prevRecvByte = 0;
+  uint32_t timeout = 10000;
 	uint32_t time = HAL_GetTick();
 
-    ESP8266_ClearRecvBuff();
-    HAL_UART_Receive_IT(ESP8266_huart, (uint8_t*)&recvByte, (uint16_t)1);
+  ESP8266_ClearRecvBuff();
+  HAL_UART_Receive_IT(ESP8266_huart, (uint8_t*)&recvByte, (uint16_t)1);
 
 	while(HAL_GetTick() - time < timeout)
 	{
